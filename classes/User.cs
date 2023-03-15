@@ -6,22 +6,19 @@ public class User
 {
     private static string[] validSeparators = { ":", "-" };
 
-    public static User CreateUserFromLine(string line, int lineIndex)
+    public static User CreateUserFromLine(string line)
     {
-        string[] splitedLine = line.Split(" ");
+        string[] splitedLine = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 
-        string separator = splitedLine[^2];
-        string phoneNumberCode = splitedLine[^1];
-        string name = splitedLine[0];
-        string surname = splitedLine[1] == separator ? "" : splitedLine[1];
+        string separator = splitedLine[^2].Trim();
+        string phoneNumberCode = splitedLine[^1].Trim();
+        string name = splitedLine[0].Trim();
+        string surname = splitedLine[1] == separator ? "" : splitedLine[1].Trim();
 
         User user = new User(name, surname, phoneNumberCode, line)
         {
-            Id = lineIndex,
             Separator = separator
         };
-
-        user.Validate();
         return user;
     }
     public override string ToString()
@@ -35,7 +32,6 @@ public class User
     private string? initialUserLine;
     private string? errorMessage;
 
-    public int Id { get; init; }
     public string Separator { get; init; }
     public string Name { get; set; }
     public string Surname { get; set; }
@@ -49,26 +45,40 @@ public class User
         PhoneNumberCode = phoneNumberCode;
     }
 
-    private void Validate()
+    public string this[string propName]
+    {
+        get
+        {
+            return propName switch
+            {
+                "Name" => Name,
+                "Surname" => Surname,
+                "PhoneNumberCode" => PhoneNumberCode,
+                _ => "",
+            };
+        }
+    }
+
+    public void Validate(int lineIndex)
     {
         StringBuilder result = new StringBuilder("");
 
         if (!validSeparators.Contains(Separator))
-            result.Append("separator should be ':' or '-'.");
+            result.Append(" separator should be ':' or '-'.");
 
-        if (PhoneNumberCode.Length - 1 != 9)
+        if (PhoneNumberCode.Length != 9)
         {
             result.Replace(".", ",");
-            result.Append("phone number should be 9 digits.");
+            result.Append(" phone number should be 9 digits.");
         }
-
+        
         if (result.ToString() == "")
         {
             errorMessage = null;
         }
         else
         {
-            result.Insert(0, $"Line {Id}: ");
+            result.Insert(0, $"Line {lineIndex}:");
             errorMessage = result.ToString();
         }
     }
